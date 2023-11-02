@@ -1,0 +1,126 @@
+version: '3'
+services:
+  registry-service:
+    image: 'jadhavsanjay64/registry-service:0.0.1'
+    container_name: registry-service
+    ports:
+      - '8076:8076'
+    networks:
+      - bootapp
+    depends_on:
+      - mysqldb
+
+  config-server:
+    image: 'jadhavsanjay64/config-server:0.0.1'
+    container_name: config-server
+    ports:
+      - "9296:9296"
+    environment:
+      - EUREKA_SERVER_ADDRESS=http://registry-service:8076/eureka
+      - DB_HOST=mysqldb
+    restart: always
+    networks:
+      - bootapp
+    depends_on:
+      - mysqldb
+      - registry-service
+
+  api-gateway:
+    image: 'jadhavsanjay64/api-gateway-service:0.0.1'
+    container_name: api-gateway-service
+    ports:
+      - "9000:9000"
+    environment:
+      - EUREKA_SERVER_ADDRESS=http://registry-service:8076/eureka
+      - DB_HOST=mysqldb
+      - CONFIG_SERVER_URL=config-server
+      - ZIPKIN_URL=zipkin
+    restart: always
+    networks:
+      - bootapp
+    depends_on:
+      - mysqldb
+      - registry-service
+
+  info-service:
+    image: 'jadhavsanjay64/info-service:0.0.1'
+    container_name: info-service
+    ports:
+      - "9090:9090"
+    environment:
+      - EUREKA_SERVER_ADDRESS=http://registry-service:8076/eureka
+      - DB_HOST=mysqldb
+      - CONFIG_SERVER_URL=config-server
+      - ZIPKIN_URL=zipkin
+    restart: always
+    networks:
+      - bootapp
+    depends_on:
+      - mysqldb
+      - registry-service
+      - CONFIG_SERVER_URL=config-server
+
+  garbage-service:
+    image: 'jadhavsanjay64/garbage-service:0.0.1'
+    container_name: garbage-service
+    ports:
+      - "9091:9091"
+    environment:
+      - EUREKA_SERVER_ADDRESS=http://registry-service:8076/eureka
+      - DB_HOST=mysqldb
+      - CONFIG_SERVER_URL=config-server
+      - ZIPKIN_URL=zipkin
+    restart: always
+    networks:
+      - bootapp
+    depends_on:
+      - mysqldb
+      - registry-service
+      - info-service
+
+  user-service:
+    image: 'jadhavsanjay64/user-service:0.0.1'
+    container_name: user-service
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_SERVER_ADDRESS=http://registry-service:8076/eureka
+      - DB_HOST=mysqldb
+      - CONFIG_SERVER_URL=config-server
+      - ZIPKIN_URL=zipkin
+    restart: always
+    networks:
+      - bootapp
+    depends_on:
+      - mysqldb
+      - registry-service
+
+  mysqldb:
+    container_name: mysqldb
+    image: mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - bootapp
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=dev
+
+  zipkin:
+    container_name: zipkin
+    image: openzipkin/zipkin
+    ports:
+      - 9411:9411
+    networks:
+      - bootapp
+    depends_on:
+      - mysqldb
+      - registry-service
+      - config-server
+      - api-gateway
+      - info-service
+      - garbage-service
+      - user-service
+
+networks:
+  bootapp:
