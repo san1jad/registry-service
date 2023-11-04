@@ -1,0 +1,14 @@
+MYSQL downlaod:
+docker run --name root -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -d mysql
+// To change the password
+docker exec -it <container_id> bash
+mysql -u<root_mysql_user> -p<old_password>
+
+clear all docker
+docker system prune -a
+
+docker delete container id1 id2
+
+
+docker build -t jadhavsanjay64/config-server:0.0.1 -t jadhavsanjay64/config-server:latest .
+docker push jadhavsanjay64/info-service:latest 
